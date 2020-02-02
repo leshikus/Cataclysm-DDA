@@ -158,7 +158,8 @@ weather_sum sum_conditions( const time_point &start, const time_point &end,
 
         weather_type wtype = current_weather( location, t );
         proc_weather_sum( wtype, data, t, tick_size );
-        data.wind_amount += get_local_windpower( g->weather.windspeed, overmap_buffer.ter( location ),
+        data.wind_amount += get_local_windpower( g->weather.windspeed,
+                            overmap_buffer.ter( ms_to_omt_copy( location ) ),
                             location,
                             g->weather.winddirection, false ) * to_turns<int>( tick_size );
     }
@@ -715,8 +716,14 @@ int get_local_windchill( double temperature, double humidity, double windpower )
         tmpwind = tmpwind * 0.44704;
         tmptemp = temp_to_celsius( tmptemp );
 
-        windchill = 0.33 * ( humidity / 100.00 * 6.105 * exp( 17.27 * tmptemp /
-                             ( 237.70 + tmptemp ) ) ) - 0.70 * tmpwind - 4.00;
+        // Cap the vapor pressure term to 50C of extra heat, as this term
+        // otherwise grows logistically to an asymptotic value of about 2e7
+        // for large values of temperature. This is presumably due to the
+        // model being designed for reasonable ambient temperature values,
+        // rather than extremely high ones.
+        windchill = 0.33 * std::min<float>( 150.00, humidity / 100.00 * 6.105 *
+                                            exp( 17.27 * tmptemp / ( 237.70 + tmptemp ) ) ) - 0.70 *
+                    tmpwind - 4.00;
         // Convert to Fahrenheit, but omit the '+ 32' because we are only dealing with a piece of the felt air temperature equation.
         windchill = windchill * 9 / 5;
     }

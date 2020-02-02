@@ -62,6 +62,7 @@
 #include "translations.h"
 #include "type_id.h"
 #include "game_constants.h"
+#include "cata_string_consts.h"
 
 #define dbg(x) DebugLog((x),D_SDL) << __FILE__ << ":" << __LINE__ << ": "
 
@@ -82,7 +83,6 @@ static const std::array<std::string, 8> multitile_keys = {{
 
 extern int fontwidth;
 extern int fontheight;
-static const efftype_id effect_ridden( "ridden" );
 static const std::string empty_string;
 static const std::array<std::string, 12> TILE_CATEGORY_IDS = {{
         "", // C_NONE,
@@ -1353,10 +1353,13 @@ void cata_tiles::draw( const point &dest, const tripoint &center, int width, int
                                    would_apply_vision_effects( g->m.get_visibility( ch.visibility_cache[np.x][np.y], cache ) );
             }
             //calling draw to memorize everything.
-            draw_terrain( p, lighting, height_3d, invisible );
-            draw_furniture( p, lighting, height_3d, invisible );
-            draw_trap( p, lighting, height_3d, invisible );
-            draw_vpart( p, lighting, height_3d, invisible );
+            if( g->m.check_seen_cache( p ) ) {
+                draw_terrain( p, lighting, height_3d, invisible );
+                draw_furniture( p, lighting, height_3d, invisible );
+                draw_trap( p, lighting, height_3d, invisible );
+                draw_vpart( p, lighting, height_3d, invisible );
+                g->m.check_and_set_seen_cache( p );
+            }
         }
     }
 
@@ -2176,7 +2179,7 @@ bool cata_tiles::draw_terrain( const tripoint &p, const lit_level ll, int &heigh
             // do something to get other terrain orientation values
         }
         const std::string &tname = t.id().str();
-        if( g->m.check_and_set_seen_cache( p ) ) {
+        if( g->m.check_seen_cache( p ) ) {
             g->u.memorize_tile( g->m.getabs( p ), tname, subtile, rotation );
         }
         // draw the actual terrain if there's no override
@@ -2338,9 +2341,9 @@ bool cata_tiles::draw_furniture( const tripoint &p, const lit_level ll, int &hei
         };
         int subtile = 0;
         int rotation = 0;
-        get_tile_values( f, neighborhood, subtile, rotation );
+        get_tile_values( f.to_i(), neighborhood, subtile, rotation );
         const std::string &fname = f.id().str();
-        if( g->m.check_and_set_seen_cache( p ) ) {
+        if( g->m.check_seen_cache( p ) ) {
             g->u.memorize_tile( g->m.getabs( p ), fname, subtile, rotation );
         }
         // draw the actual furniture if there's no override
@@ -2368,7 +2371,7 @@ bool cata_tiles::draw_furniture( const tripoint &p, const lit_level ll, int &hei
             };
             int subtile = 0;
             int rotation = 0;
-            get_tile_values( f2, neighborhood, subtile, rotation );
+            get_tile_values( f2.to_i(), neighborhood, subtile, rotation );
             const std::string &fname = f2.id().str();
             // tile overrides are never memorized
             // tile overrides are always shown with full visibility
@@ -2412,9 +2415,9 @@ bool cata_tiles::draw_trap( const tripoint &p, const lit_level ll, int &height_3
         };
         int subtile = 0;
         int rotation = 0;
-        get_tile_values( tr, neighborhood, subtile, rotation );
+        get_tile_values( tr.to_i(), neighborhood, subtile, rotation );
         const std::string trname = tr.id().str();
-        if( g->m.check_and_set_seen_cache( p ) ) {
+        if( g->m.check_seen_cache( p ) ) {
             g->u.memorize_tile( g->m.getabs( p ), trname, subtile, rotation );
         }
         // draw the actual trap if there's no override
@@ -2442,7 +2445,7 @@ bool cata_tiles::draw_trap( const tripoint &p, const lit_level ll, int &height_3
             };
             int subtile = 0;
             int rotation = 0;
-            get_tile_values( tr2, neighborhood, subtile, rotation );
+            get_tile_values( tr2.to_i(), neighborhood, subtile, rotation );
             const std::string &trname = tr2.id().str();
             // tile overrides are never memorized
             // tile overrides are always shown with full visibility
@@ -2500,7 +2503,7 @@ bool cata_tiles::draw_field_or_item( const tripoint &p, const lit_level ll, int 
 
         int subtile = 0;
         int rotation = 0;
-        get_tile_values( fld, neighborhood, subtile, rotation );
+        get_tile_values( fld.to_i(), neighborhood, subtile, rotation );
 
         ret_draw_field = draw_from_id_string( fld.id().str(), C_FIELD, empty_string, p, subtile,
                                               rotation, lit, nv );
@@ -2580,7 +2583,7 @@ bool cata_tiles::draw_vpart( const tripoint &p, lit_level ll, int &height_3d,
         const int rotation = veh.face.dir();
         const std::string vpname = "vp_" + vp_id.str();
         if( !veh.forward_velocity() && !veh.player_in_control( g->u ) &&
-            g->m.check_and_set_seen_cache( p ) ) {
+            g->m.check_seen_cache( p ) ) {
             g->u.memorize_tile( g->m.getabs( p ), vpname, subtile, rotation );
         }
         if( !overridden ) {
@@ -3121,7 +3124,7 @@ void cata_tiles::draw_explosion_frame()
         draw_from_id_string( exp_name, exp_pos + point( i, i ),
                              subtile, rotation++, LL_LIT, nv_goggles_activated );
         draw_from_id_string( exp_name, exp_pos + point( i, -i ),
-                             subtile, rotation++, LL_LIT, nv_goggles_activated );
+                             subtile, rotation, LL_LIT, nv_goggles_activated );
 
         subtile = edge;
         for( int j = 1 - i; j < 0 + i; j++ ) {

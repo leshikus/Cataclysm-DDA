@@ -1,6 +1,6 @@
 #include "npctrade.h"
 
-#include <limits.h>
+#include <climits>
 #include <cstdlib>
 #include <algorithm>
 #include <string>
@@ -31,8 +31,7 @@
 #include "type_id.h"
 #include "faction.h"
 #include "pimpl.h"
-
-static const skill_id skill_barter( "barter" );
+#include "cata_string_consts.h"
 
 void npc_trading::transfer_items( std::vector<item_pricing> &stuff, player &giver,
                                   player &receiver, std::list<item_location *> &from_map,
@@ -63,9 +62,6 @@ void npc_trading::transfer_items( std::vector<item_pricing> &stuff, player &give
         }
 
         if( ip.loc.where() == item_location::type::character ) {
-            if( gift.typeId() == giver.weapon.typeId() ) {
-                giver.remove_weapon();
-            }
             if( ip.charges > 0 ) {
                 giver.use_charges( gift.typeId(), charges );
             } else if( ip.count > 0 ) {

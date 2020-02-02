@@ -140,11 +140,15 @@ struct mutation_branch {
         float max_stamina_modifier = 1.0f;
         float weight_capacity_modifier = 1.0f;
         float hearing_modifier = 1.0f;
+        float movecost_swim_modifier = 1.0f;
         float noise_modifier = 1.0f;
         float scent_modifier = 1.0f;
         cata::optional<int> scent_intensity;
         cata::optional<int> scent_mask;
         int bleed_resist = 0;
+
+        /**Map of crafting skills modifiers, can be negative*/
+        std::map<skill_id, int> craft_skill_bonus;
 
         /**What do you smell like*/
         cata::optional<scenttype_id> scent_typeid;
@@ -185,6 +189,9 @@ struct mutation_branch {
         // Multiplier for map memory capacity, defaulting to 1.
         float map_memory_capacity_multiplier = 1.0f;
 
+        // Multiplier for reading speed, defaulting to 1.
+        float reading_speed_multiplier = 1.0f;
+
         // Multiplier for skill rust, defaulting to 1.
         float skill_rust_multiplier = 1.0f;
 
@@ -196,6 +203,9 @@ struct mutation_branch {
 
         /**Species ignoring character with the mutation*/
         std::vector<species_id> ignored_by;
+
+        /**Map of angered species and there intensity*/
+        std::map<species_id, int> anger_relations;
 
         /**List of material required for food to be be edible*/
         std::set<material_id> can_only_eat;
